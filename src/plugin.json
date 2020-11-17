@@ -1,0 +1,37 @@
+{
+  "type": "panel",
+  "name": "pie-chart",
+  "id": "ismael-pie-chart",
+  "info": {
+    "description": "Pie chart panel plugin",
+    "author": {
+      "name": "Ismael",
+      "url": ""
+    },
+    "keywords": [
+      "pie chart",
+      "d3"
+    ],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Website",
+        "url": "https://github.com/grafana/simple-react-panel"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/grafana/simple-react-panel/blob/master/LICENSE"
+      }
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaVersion": "7.0.x",
+    "plugins": []
+  }
+}
