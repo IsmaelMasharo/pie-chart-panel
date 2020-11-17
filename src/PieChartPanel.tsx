@@ -126,12 +126,14 @@ export const PieChartPanel = ({ options, data, width, height }) => {
 
   const radToDegree = d => (d * 180) / Math.PI;
 
-  const rotateAnnotation = d => d.endAngle - d.startAngle < maxArcRotationAngleRadi
-  const displayAnnotation = d => d.endAngle - d.startAngle > minVisibleArcAngleRadi
+  const rotateAnnotation = d => d.endAngle - d.startAngle < maxArcRotationAngleRadi;
+  const displayAnnotation = d => d.endAngle - d.startAngle > minVisibleArcAngleRadi;
 
   const rotateRadialAnnotation = d => {
     // only rotate text if arc is to thin
-    if (!rotateAnnotation(d)) return 0;
+    if (!rotateAnnotation(d)) {
+      return 0;
+    }
 
     // this will always be a positive number since d3.pie startAngle and endAngle are between 0-360 degrees
     const radialPieAngle = radToDegree((d.startAngle + d.endAngle) / 2);
@@ -179,33 +181,42 @@ export const PieChartPanel = ({ options, data, width, height }) => {
       .attr('dy', '0.35em')
       .attr('transform', d => `translate(${arcAnnotation.centroid(d)}) rotate(${rotateRadialAnnotation(d)})`)
       .filter(displayAnnotation)
-      .call(text => text.append("tspan")
-          .attr("font-weight", "bold")
-          .each((d, i, nodes)=> {
-            if (!rotateAnnotation(d))
-              d3.select(nodes[i]).attr("y", "-0.4em")
+      .call(text =>
+        text
+          .append('tspan')
+          .attr('font-weight', 'bold')
+          .each((d, i, nodes) => {
+            if (!rotateAnnotation(d)) {
+              d3.select(nodes[i]).attr('y', '-0.4em');
+            }
           })
-          .text(d => d3.format('.1%')(d.value / total)))
-      .call(text => config.displayTotals &&
-        text.append("tspan")
-          .attr("fill-opacity", 0.7)
-          // display totals next to percentage if annotation should rotate
-          // display bellow otherwise
-          .each((d, i, nodes)=> {
-            if (!rotateAnnotation(d))
-              d3.select(nodes[i])
-                .attr("x", 0)
-                .attr("y", "1em")
-          })
-          .text(d => rotateAnnotation(d) ? ` - ${d.value}` : d.value))
+          .text(d => d3.format('.1%')(d.value / total))
+      )
+      .call(
+        text =>
+          config.displayTotals &&
+          text
+            .append('tspan')
+            .attr('fill-opacity', 0.7)
+            // display totals next to percentage if annotation should rotate
+            // display bellow otherwise
+            .each((d, i, nodes) => {
+              if (!rotateAnnotation(d)) {
+                d3.select(nodes[i])
+                  .attr('x', 0)
+                  .attr('y', '1em');
+              }
+            })
+            .text(d => (rotateAnnotation(d) ? ` - ${d.value}` : d.value))
+      );
 
     config.displayTotals &&
-    pie
-      .append('text')
-      .attr('font-size', scaledTotalSize)
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.4em')
-      .text(total)
+      pie
+        .append('text')
+        .attr('font-size', scaledTotalSize)
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.4em')
+        .text(total);
   };
 
   return (
