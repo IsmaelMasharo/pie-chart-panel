@@ -15,9 +15,10 @@ export const PieChartPanel = ({ options, data, width, height }) => {
   const config = {
     background: '#f8f8fa',
     legendPosition: options.legendPosition,
-    color: 'Oranges',
+    color: options.colorScale,
     verticalLegend: false,
     pieCentered: options.pieCentered,
+    displayTotals: options.displayTotals,
   };
 
   const marginLegendVisible =
@@ -40,6 +41,7 @@ export const PieChartPanel = ({ options, data, width, height }) => {
   // -----------------------  CHART FIELD VALUES  -----------------------
   const values = valueAccesor.values.toArray();
   const categories = categoryAccesor.values.toArray();
+  const total = d3.sum(values);
 
   // -----------------------    CHART DIMENSIONS  -----------------------
   const panelMinDimension = Math.min(width, height);
@@ -59,7 +61,12 @@ export const PieChartPanel = ({ options, data, width, height }) => {
 
   // PIE POSITIONS WILL BE PLACED USING THE SVG COORDINATE SYSTEM
   const pieOuterRadius = Math.min(dimensions.boundedWidth, dimensions.boundedHeight) / 2;
+  const pieInnerRadius = config.displayTotals ? pieOuterRadius / 2.2 : 0;
   const pieCenter = [dimensions.boundedWidth / 2, dimensions.boundedHeight / 2];
+
+  // ARC ANNOTATION VISIBILITY PARAMS
+  const maxArcRotationAngleRadi = 0.3;
+  const minVisibleArcAngleRadi = 0.1;
 
   // VARIABLES USED IF THE PIE SHOULD BY CENTERED AND THE LEGEND PLACED AT ITS RIGHT
   // SINCE IN THIS CASE THE LEGEND WILL BE POSITIONED ABSOLUTLY
@@ -76,7 +83,8 @@ export const PieChartPanel = ({ options, data, width, height }) => {
   // PIE ANNOTATIONS (VALUE %)
   const baseLegendSize = 14;
   const scaledLegendSize = baseLegendSize / chartScaleFactor;
-  const annotationRadiusFactor = 0.6;
+  const scaledTotalSize = scaledLegendSize * 2;
+  const annotationRadiusFactor = config.displayTotals ? 0.72 : 0.6;
   const annotationRadius = pieOuterRadius * annotationRadiusFactor;
 
   // -----------------------    CHART ELEMENTS    -----------------------
@@ -106,7 +114,7 @@ export const PieChartPanel = ({ options, data, width, height }) => {
   // ARC GENERATOR
   const arc = d3
     .arc()
-    .innerRadius(0)
+    .innerRadius(pieInnerRadius)
     .outerRadius(pieOuterRadius)
     .cornerRadius(6);
 
@@ -118,12 +126,12 @@ export const PieChartPanel = ({ options, data, width, height }) => {
 
   const radToDegree = d => (d * 180) / Math.PI;
 
+  const rotateAnnotation = d => d.endAngle - d.startAngle < maxArcRotationAngleRadi
+  const displayAnnotation = d => d.endAngle - d.startAngle > minVisibleArcAngleRadi
+
   const rotateRadialAnnotation = d => {
     // only rotate text if arc is to thin
-    const maxArcRotationAngleRadi = 0.3;
-    if (d.endAngle - d.startAngle > maxArcRotationAngleRadi) {
-      return 0;
-    }
+    if (!rotateAnnotation(d)) return 0;
 
     // this will always be a positive number since d3.pie startAngle and endAngle are between 0-360 degrees
     const radialPieAngle = radToDegree((d.startAngle + d.endAngle) / 2);
@@ -161,7 +169,6 @@ export const PieChartPanel = ({ options, data, width, height }) => {
       .attr('d', arc);
 
     // PIE ANNOTATION
-    const minVisibleArcAngleRadi = 0.1;
     pie
       .append('g')
       .attr('font-size', scaledLegendSize)
@@ -171,8 +178,34 @@ export const PieChartPanel = ({ options, data, width, height }) => {
       .join('text')
       .attr('dy', '0.35em')
       .attr('transform', d => `translate(${arcAnnotation.centroid(d)}) rotate(${rotateRadialAnnotation(d)})`)
-      .filter(d => d.endAngle - d.startAngle > minVisibleArcAngleRadi)
-      .text(d => d3.format('.1%')(d.value / d3.sum(values)));
+      .filter(displayAnnotation)
+      .call(text => text.append("tspan")
+          .attr("font-weight", "bold")
+          .each((d, i, nodes)=> {
+            if (!rotateAnnotation(d))
+              d3.select(nodes[i]).attr("y", "-0.4em")
+          })
+          .text(d => d3.format('.1%')(d.value / total)))
+      .call(text => config.displayTotals &&
+        text.append("tspan")
+          .attr("fill-opacity", 0.7)
+          // display totals next to percentage if annotation should rotate
+          // display bellow otherwise
+          .each((d, i, nodes)=> {
+            if (!rotateAnnotation(d))
+              d3.select(nodes[i])
+                .attr("x", 0)
+                .attr("y", "1em")
+          })
+          .text(d => rotateAnnotation(d) ? ` - ${d.value}` : d.value))
+
+    config.displayTotals &&
+    pie
+      .append('text')
+      .attr('font-size', scaledTotalSize)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.4em')
+      .text(total)
   };
 
   return (
