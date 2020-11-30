@@ -153,6 +153,11 @@ export const PieChartPanel = ({ options, data, width, height }) => {
     return upsideownRotation;
   };
 
+  // VALUE FORMATING
+  const formatValue = value => d3.format('.2~f')(value);
+  const formatPercent = percent => d3.format('.1~%')(percent);
+  const formatThousand = value => d3.format('.3~s')(value);
+
   // ------------------------------- CHART  ------------------------------
   const chart = svg => {
     // BOUNDS
@@ -168,13 +173,21 @@ export const PieChartPanel = ({ options, data, width, height }) => {
       .join('path')
       .attr('stroke', 'white')
       .attr('fill', d => colorByIndex(d.index))
-      .attr('d', arc);
+      .attr('d', arc)
+      .append('title')
+      .text(
+        (d, i) =>
+          `${categoryAccesor.values.get(i)}\nTotal: ${formatValue(d.value)}\nPercentage: ${formatPercent(
+            d.value / total
+          )}`
+      );
 
     // PIE ANNOTATION
     pie
       .append('g')
       .attr('font-size', scaledLegendSize)
       .attr('text-anchor', 'middle')
+      .attr('pointer-events', 'none')
       .selectAll('text')
       .data(arcs)
       .join('text')
@@ -190,7 +203,7 @@ export const PieChartPanel = ({ options, data, width, height }) => {
               d3.select(nodes[i]).attr('y', '-0.4em');
             }
           })
-          .text(d => d3.format('.1%')(d.value / total))
+          .text(d => formatPercent(d.value / total))
       )
       .call(
         text =>
@@ -207,7 +220,10 @@ export const PieChartPanel = ({ options, data, width, height }) => {
                   .attr('y', '1em');
               }
             })
-            .text(d => (rotateAnnotation(d) ? ` - ${d.value}` : d.value))
+            .text(d => {
+              const value = formatThousand(d.value);
+              return rotateAnnotation(d) ? ` - ${value}` : value;
+            })
       );
 
     config.displayTotals &&
