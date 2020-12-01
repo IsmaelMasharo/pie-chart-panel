@@ -1,12 +1,13 @@
 // @ts-nocheck
 import React from 'react';
+import * as d3 from 'd3';
 import { PanelProps } from '@grafana/data';
 import { PieChartOptions } from 'types';
-import * as d3 from 'd3';
 import { Swatches } from './legend';
 
-// PURE JSX IMPLEMENTATION
-export const PieChartPanel = ({ options, data, width, height }) => {
+interface Props extends PanelProps<PieChartOptions> {}
+
+export const PieChartPanel: React.FC<Props> = ({ options, data, width, height }) => {
   // -----------------------    CHART CONSTANTS    -----------------------
   const CHART_REQUIRED_FIELDS = { category: 'category', value: 'value' };
   const LEGEND_POSITION = { bottom: 'bottom', right: 'right' };
